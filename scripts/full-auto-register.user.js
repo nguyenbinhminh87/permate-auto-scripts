@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Auto Đăng Ký Permate GUI v1.6
+// @name         Auto Đăng Ký Permate GUI v1.6 FIX
 // @namespace    http://tampermonkey.net/
 // @version      1.6
-// @description  Tự động điền form tại trang đăng ký partner Permate, có GUI với nút bấm, random họ tên, email, sdt, mật khẩu mạnh ✔️
+// @description  Auto điền form partner Permate (đã sửa selector), có GUI nút bấm, random tên/sdt/email/pass ✅
 // @author       Minhconbo
 // @match        https://permate.com/auth/partner/sign-up*
 // @grant        none
@@ -11,7 +11,7 @@
 (function() {
     'use strict';
 
-    // Giao diện
+    // Giao diện đơn giản
     const gui = document.createElement('div');
     gui.style = `
         position: fixed;
@@ -29,8 +29,8 @@
     `;
     document.body.appendChild(gui);
 
-    // Random chuỗi
-    const randomStr = (length = 5) => Math.random().toString(36).substring(2, 2 + length);
+    // Hàm random
+    const randomStr = (length = 4) => Math.random().toString(36).substring(2, 2 + length);
 
     document.getElementById("regBtn").onclick = () => {
         const ho = "Nguyen";
@@ -40,17 +40,16 @@
         const sdt = "09" + Math.floor(10000000 + Math.random() * 89999999);
 
         try {
-            // Thay đúng tên field của form mới
-            document.querySelector('input[name="first_name"]').value = ten;
-            document.querySelector('input[name="last_name"]').value = ho;
+            document.querySelector('input[name="lastName"]').value = ho;
+            document.querySelector('input[name="firstName"]').value = ten;
             document.querySelector('input[name="email"]').value = email;
-            document.querySelector('input[name="phone"]').value = sdt;
+            document.querySelector('input[name="phoneNumber"]').value = sdt;
             document.querySelector('input[name="password"]').value = password;
             document.querySelector('input[name="password_confirmation"]').value = password;
 
-            alert("✅ Form đã được điền. Tick CAPTCHA rồi tự bấm Đăng ký!");
+            alert("✅ Đã điền xong. Tick CAPTCHA rồi bấm Đăng ký!");
         } catch (e) {
-            alert("❌ Không tìm thấy form – có thể selector đã đổi hoặc chưa load xong.");
+            alert("❌ Form chưa load xong hoặc selector sai.");
         }
     };
 })();
