@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Auto Đăng Ký Permate GUI v1.5
+// @name         Auto Đăng Ký Permate GUI v1.6
 // @namespace    http://tampermonkey.net/
-// @version      1.5
-// @description  Tạo tài khoản Permate.com nhanh bằng GUI có nút bấm
+// @version      1.6
+// @description  Tự động điền form tại trang đăng ký partner Permate, có GUI với nút bấm, random họ tên, email, sdt, mật khẩu mạnh ✔️
 // @author       Minhconbo
 // @match        https://permate.com/auth/partner/sign-up*
 // @grant        none
@@ -11,7 +11,7 @@
 (function() {
     'use strict';
 
-    // ===== TẠO GIAO DIỆN (GUI) =====
+    // Giao diện
     const gui = document.createElement('div');
     gui.style = `
         position: fixed;
@@ -21,38 +21,36 @@
         padding: 10px;
         z-index: 9999;
         font-family: sans-serif;
-        box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
         border-radius: 8px;
     `;
     gui.innerHTML = `
-        <h4 style="margin:0 0 10px;">Auto Reg v1.5</h4>
+        <h4 style="margin:0 0 10px;">Auto Reg v1.6</h4>
         <button id="regBtn" style="padding:5px 10px;">Auto Đăng Ký</button>
     `;
     document.body.appendChild(gui);
 
-    // ===== XỬ LÝ AUTO ĐĂNG KÝ =====
+    // Random chuỗi
+    const randomStr = (length = 5) => Math.random().toString(36).substring(2, 2 + length);
+
     document.getElementById("regBtn").onclick = () => {
-        const username = "minhconbo" + Math.floor(Math.random() * 100000);
-        const email = username + "@gmail.com";
-        const password = "Minh1234";
+        const ho = "Nguyen";
+        const ten = "Minh" + randomStr();
+        const email = (ho + ten).toLowerCase() + "@yopmail.com";
+        const password = "Minh1234!";
+        const sdt = "09" + Math.floor(10000000 + Math.random() * 89999999);
 
-        const userInput = document.querySelector('input[name="username"]');
-        const emailInput = document.querySelector('input[name="email"]');
-        const passInput = document.querySelector('input[name="password"]');
-        const pass2Input = document.querySelector('input[name="password_confirmation"]');
-        const submitBtn = document.querySelector('button[type="submit"]');
+        try {
+            // Thay đúng tên field của form mới
+            document.querySelector('input[name="first_name"]').value = ten;
+            document.querySelector('input[name="last_name"]').value = ho;
+            document.querySelector('input[name="email"]').value = email;
+            document.querySelector('input[name="phone"]').value = sdt;
+            document.querySelector('input[name="password"]').value = password;
+            document.querySelector('input[name="password_confirmation"]').value = password;
 
-        if (userInput && emailInput && passInput && pass2Input && submitBtn) {
-            userInput.value = username;
-            emailInput.value = email;
-            passInput.value = password;
-            pass2Input.value = password;
-
-            setTimeout(() => {
-                submitBtn.click();
-            }, 500);
-        } else {
-            alert("Không tìm thấy form đăng ký!");
+            alert("✅ Form đã được điền. Tick CAPTCHA rồi tự bấm Đăng ký!");
+        } catch (e) {
+            alert("❌ Không tìm thấy form – có thể selector đã đổi hoặc chưa load xong.");
         }
     };
 })();
