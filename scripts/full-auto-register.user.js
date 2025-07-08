@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Auto Đăng Ký Permate GUI v1.6 FIX
+// @name         Auto Đăng Ký Permate GUI v1.6.1
 // @namespace    http://tampermonkey.net/
-// @version      1.6
-// @description  Auto điền form partner Permate (đã sửa selector), có GUI nút bấm, random tên/sdt/email/pass ✅
+// @version      1.6.1
+// @description  Auto điền form Permate có GUI và tự đợi form render (fix lỗi chưa load) ✅
 // @author       Minhconbo
 // @match        https://permate.com/auth/partner/sign-up*
 // @grant        none
@@ -11,7 +11,7 @@
 (function() {
     'use strict';
 
-    // Giao diện đơn giản
+    // Giao diện
     const gui = document.createElement('div');
     gui.style = `
         position: fixed;
@@ -24,32 +24,48 @@
         border-radius: 8px;
     `;
     gui.innerHTML = `
-        <h4 style="margin:0 0 10px;">Auto Reg v1.6</h4>
+        <h4 style="margin:0 0 10px;">Auto Reg v1.6.1</h4>
         <button id="regBtn" style="padding:5px 10px;">Auto Đăng Ký</button>
     `;
     document.body.appendChild(gui);
 
-    // Hàm random
-    const randomStr = (length = 4) => Math.random().toString(36).substring(2, 2 + length);
+    // Hàm random chuỗi
+    const randomStr = (length = 5) => Math.random().toString(36).substring(2, 2 + length);
 
+    // Bắt sự kiện click nút
     document.getElementById("regBtn").onclick = () => {
-        const ho = "Nguyen";
-        const ten = "Minh" + randomStr();
-        const email = (ho + ten).toLowerCase() + "@yopmail.com";
-        const password = "Minh1234!";
-        const sdt = "09" + Math.floor(10000000 + Math.random() * 89999999);
+        let attempts = 0;
 
-        try {
-            document.querySelector('input[name="lastName"]').value = ho;
-            document.querySelector('input[name="firstName"]').value = ten;
-            document.querySelector('input[name="email"]').value = email;
-            document.querySelector('input[name="phoneNumber"]').value = sdt;
-            document.querySelector('input[name="password"]').value = password;
-            document.querySelector('input[name="password_confirmation"]').value = password;
+        const checkForm = setInterval(() => {
+            const last = document.querySelector('input[name="lastName"]');
+            const first = document.querySelector('input[name="firstName"]');
+            const email = document.querySelector('input[name="email"]');
+            const phone = document.querySelector('input[name="phoneNumber"]');
+            const pass = document.querySelector('input[name="password"]');
+            const pass2 = document.querySelector('input[name="password_confirmation"]');
 
-            alert("✅ Đã điền xong. Tick CAPTCHA rồi bấm Đăng ký!");
-        } catch (e) {
-            alert("❌ Form chưa load xong hoặc selector sai.");
-        }
+            if (last && first && email && phone && pass && pass2) {
+                const ho = "Nguyen";
+                const ten = "Minh" + randomStr();
+                const mail = (ho + ten).toLowerCase() + "@yopmail.com";
+                const sdt = "09" + Math.floor(10000000 + Math.random() * 89999999);
+                const pw = "Minh1234!";
+
+                last.value = ho;
+                first.value = ten;
+                email.value = mail;
+                phone.value = sdt;
+                pass.value = pw;
+                pass2.value = pw;
+
+                clearInterval(checkForm);
+                alert("✅ Form đã được điền, tick CAPTCHA và bấm Đăng ký!");
+            }
+
+            if (++attempts > 20) {
+                clearInterval(checkForm);
+                alert("❌ Form không load được sau 10 giây!");
+            }
+        }, 500);
     };
 })();
