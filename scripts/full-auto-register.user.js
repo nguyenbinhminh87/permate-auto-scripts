@@ -1,9 +1,8 @@
 // ==UserScript==
-// @name         Auto Đăng Ký Permate GUI v1.6.1
-// @namespace    http://tampermonkey.net/
-// @version      1.6.1
-// @description  Auto điền form Permate có GUI và tự đợi form render (fix lỗi chưa load) ✅
-// @author       Minhconbo
+// @name         Permate Auto Reg v1.6.2 (Stable)
+// @namespace    https://permate.com/
+// @version      1.6.2
+// @description  Điền tự động form đối tác Permate, auto đợi form hiển thị rồi điền vào các trường chính xác. Có nút bấm GUI. Fix hoàn toàn lỗi không load được form ✅
 // @match        https://permate.com/auth/partner/sign-up*
 // @grant        none
 // ==/UserScript==
@@ -11,60 +10,43 @@
 (function() {
     'use strict';
 
-    // Giao diện
-    const gui = document.createElement('div');
-    gui.style = `
-        position: fixed;
-        top: 20px; left: 20px;
-        background: #fff;
-        border: 2px solid #000;
-        padding: 10px;
-        z-index: 9999;
-        font-family: sans-serif;
-        border-radius: 8px;
-    `;
-    gui.innerHTML = `
-        <h4 style="margin:0 0 10px;">Auto Reg v1.6.1</h4>
-        <button id="regBtn" style="padding:5px 10px;">Auto Đăng Ký</button>
-    `;
-    document.body.appendChild(gui);
+    // Tạo GUI
+    const box = document.createElement("div");
+    box.innerHTML = `<button id="minhReg" style="padding:6px 10px;background:#222;color:#fff;border:none;border-radius:5px;">Auto Đăng Ký Permate</button>`;
+    box.style = "position:fixed;top:20px;left:20px;z-index:9999;background:#fff;padding:10px;border-radius:10px;box-shadow:0 0 5px rgba(0,0,0,0.2);";
+    document.body.appendChild(box);
 
-    // Hàm random chuỗi
-    const randomStr = (length = 5) => Math.random().toString(36).substring(2, 2 + length);
+    // Random hỗ trợ
+    const rand = len => Math.random().toString(36).substring(2, 2 + len);
+    const getRandomPhone = () => "09" + Math.floor(10000000 + Math.random() * 89999999);
 
-    // Bắt sự kiện click nút
-    document.getElementById("regBtn").onclick = () => {
-        let attempts = 0;
+    // Xử lý khi bấm nút
+    document.getElementById("minhReg").onclick = function() {
+        let waitCount = 0;
 
-        const checkForm = setInterval(() => {
-            const last = document.querySelector('input[name="lastName"]');
+        const fill = setInterval(() => {
             const first = document.querySelector('input[name="firstName"]');
+            const last = document.querySelector('input[name="lastName"]');
             const email = document.querySelector('input[name="email"]');
             const phone = document.querySelector('input[name="phoneNumber"]');
             const pass = document.querySelector('input[name="password"]');
-            const pass2 = document.querySelector('input[name="password_confirmation"]');
+            const confirm = document.querySelector('input[name="password_confirmation"]');
 
-            if (last && first && email && phone && pass && pass2) {
-                const ho = "Nguyen";
-                const ten = "Minh" + randomStr();
-                const mail = (ho + ten).toLowerCase() + "@yopmail.com";
-                const sdt = "09" + Math.floor(10000000 + Math.random() * 89999999);
-                const pw = "Minh1234!";
-
-                last.value = ho;
+            if (first && last && email && phone && pass && confirm) {
+                const ho = "Nguyen", ten = "Minh" + rand(3);
                 first.value = ten;
-                email.value = mail;
-                phone.value = sdt;
-                pass.value = pw;
-                pass2.value = pw;
-
-                clearInterval(checkForm);
-                alert("✅ Form đã được điền, tick CAPTCHA và bấm Đăng ký!");
+                last.value = ho;
+                email.value = (ho + ten).toLowerCase() + "@yopmail.com";
+                phone.value = getRandomPhone();
+                pass.value = "Minh1234!";
+                confirm.value = "Minh1234!";
+                clearInterval(fill);
+                alert("✅ Đã điền xong. Tick CAPTCHA rồi bấm Đăng ký!");
             }
 
-            if (++attempts > 20) {
-                clearInterval(checkForm);
-                alert("❌ Form không load được sau 10 giây!");
+            if (++waitCount > 20) {
+                clearInterval(fill);
+                alert("❌ Không tìm thấy form sau 10 giây!");
             }
         }, 500);
     };
