@@ -4,7 +4,7 @@
 // @version      1.5
 // @description  Tạo tài khoản Permate.com nhanh bằng GUI có nút bấm
 // @author       Minhconbo
-// @match        https://permate.com/register*
+// @match        https://permate.com/auth/partner/sign-up*
 // @grant        none
 // ==/UserScript==
 
