@@ -1,78 +1,58 @@
 // ==UserScript==
-// @name         Tạo ACC Permate khi bấm nút
-// @namespace    https://permate.com/
+// @name         Auto Đăng Ký Permate GUI v1.5
+// @namespace    http://tampermonkey.net/
 // @version      1.5
-// @description  Bấm nút để tạo tài khoản Permate, tránh lỗi auto chạy
-// @match        https://permate.com/auth/sign-up*
-// @match        https://permate.com/auth/verify*
+// @description  Tạo tài khoản Permate.com nhanh bằng GUI có nút bấm
+// @author       Minhconbo
+// @match        https://permate.com/register*
 // @grant        none
 // ==/UserScript==
 
-(function () {
+(function() {
     'use strict';
 
-    const yourPhone = "0987654321";
+    // ===== TẠO GIAO DIỆN (GUI) =====
+    const gui = document.createElement('div');
+    gui.style = `
+        position: fixed;
+        top: 20px; left: 20px;
+        background: #fff;
+        border: 2px solid #000;
+        padding: 10px;
+        z-index: 9999;
+        font-family: sans-serif;
+        box-shadow: 0px 0px 10px rgba(0,0,0,0.3);
+        border-radius: 8px;
+    `;
+    gui.innerHTML = `
+        <h4 style="margin:0 0 10px;">Auto Reg v1.5</h4>
+        <button id="regBtn" style="padding:5px 10px;">Auto Đăng Ký</button>
+    `;
+    document.body.appendChild(gui);
 
-    function randomString(length) {
-        const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-        return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join("");
-    }
+    // ===== XỬ LÝ AUTO ĐĂNG KÝ =====
+    document.getElementById("regBtn").onclick = () => {
+        const username = "minhconbo" + Math.floor(Math.random() * 100000);
+        const email = username + "@gmail.com";
+        const password = "Minh1234";
 
-    function saveAccount(email, password) {
-        const accList = JSON.parse(localStorage.getItem("permate_accounts") || "[]");
-        accList.push({ email, password });
-        localStorage.setItem("permate_accounts", JSON.stringify(accList));
-        alert(`✅ Đã lưu: ${email} / ${password}`);
-    }
+        const userInput = document.querySelector('input[name="username"]');
+        const emailInput = document.querySelector('input[name="email"]');
+        const passInput = document.querySelector('input[name="password"]');
+        const pass2Input = document.querySelector('input[name="password_confirmation"]');
+        const submitBtn = document.querySelector('button[type="submit"]');
 
-    // ---------------- SIGN-UP PAGE ----------------
-    if (location.href.includes("/auth/sign-up")) {
-        window.onload = () => {
-            const createBtn = document.createElement("button");
-            createBtn.innerText = "🚀 Tạo tài khoản Permate";
-            Object.assign(createBtn.style, {
-                position: "fixed", top: "10px", left: "10px", zIndex: 9999,
-                background: "#007bff", color: "#fff", border: "none",
-                padding: "10px 14px", borderRadius: "8px", cursor: "pointer"
-            });
-            document.body.appendChild(createBtn);
+        if (userInput && emailInput && passInput && pass2Input && submitBtn) {
+            userInput.value = username;
+            emailInput.value = email;
+            passInput.value = password;
+            pass2Input.value = password;
 
-            createBtn.onclick = () => {
-                const name = "Minhconbo_" + randomString(5);
-                const email = "minhconbo_" + randomString(6) + "@gmail.com";
-                const password = "MK_" + randomString(8);
-
-                document.querySelector('input[name="name"]').value = name;
-                document.querySelector('input[name="email"]').value = email;
-                document.querySelector('input[name="password"]').value = password;
-                document.querySelector('input[name="phone"]').value = yourPhone;
-
-                localStorage.setItem("current_account", JSON.stringify({ email, password }));
-
-                setTimeout(() => {
-                    const btn = document.querySelector('button[type="submit"]');
-                    if (btn) btn.click();
-                }, 1000);
-            };
-        };
-    }
-
-    // ---------------- VERIFY PAGE ----------------
-    if (location.href.includes("/auth/verify")) {
-        window.onload = () => {
-            const account = JSON.parse(localStorage.getItem("current_account") || "{}");
-            const otp = prompt(`📲 Nhập OTP cho ${account.email}:`);
-            const input = document.querySelector('input[name="code"]');
-            const btn = document.querySelector('button[type="submit"]');
-
-            if (otp && otp.length >= 4 && input && btn) {
-                input.value = otp;
-                setTimeout(() => btn.click(), 800);
-            }
-
-            if (account.email) {
-                saveAccount(account.email, account.password);
-            }
-        };
-    }
+            setTimeout(() => {
+                submitBtn.click();
+            }, 500);
+        } else {
+            alert("Không tìm thấy form đăng ký!");
+        }
+    };
 })();
