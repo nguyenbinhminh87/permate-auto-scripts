@@ -1,63 +1,72 @@
 // ==UserScript==
-// @name         Auto Đăng Ký Permate v1.6.7 (Fix Every Where)
+// @name         Permate Auto Register v1.8.3
 // @namespace    https://permate.com/
-// @version      1.6.7
-// @description  Auto điền form Permate ổn định, chống lỗi form, không auto submit
-// @match        https://permate.com/auth/partner/sign-up*
+// @version      1.8.3
+// @description  Đăng ký Permate tự động với email @maildim.com ✔️ Auto mở tab maildim.com để lấy OTP ✔️ Có GUI "Auto Đăng Ký" ✔️ Không kèm OTP tự dán (đang tách riêng)
+// @author       Minhconbo
+// @match        https://permate.com/auth/partner/sign-up
 // @grant        none
 // ==/UserScript==
 
 (function () {
     'use strict';
 
-    // Giao diện nút
-    const box = document.createElement("div");
-    box.innerHTML = `<button id="autoPermate" style="padding:8px 12px;background:#d00;color:#fff;border:none;border-radius:6px;font-weight:bold;">🚀 Auto Đăng Ký Permate</button>`;
-    box.style = "position:fixed;top:20px;left:20px;z-index:9999;background:#fff;padding:10px;border-radius:10px;box-shadow:0 0 6px rgba(0,0,0,0.3);font-family:sans-serif;";
-    document.body.appendChild(box);
+    function generateRandomEmail() {
+        const prefix = Math.random().toString(36).substring(2, 10);
+        return prefix + "@maildim.com";
+    }
 
-    // Tạo random
-    const rand = len => Math.random().toString(36).substring(2, 2 + len);
-    const getPhone = () => "09" + Math.floor(10000000 + Math.random() * 89999999);
-    const getPassword = () => "Minh" + Math.floor(1000 + Math.random() * 8999) + "!";
+    function simulateInput(el, value) {
+        el.value = value;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
-    // Bấm nút
-    document.getElementById("autoPermate").onclick = () => {
-        let count = 0;
-        const timer = setInterval(() => {
-            const first = document.querySelector('input[name="firstName"]');
-            const last = document.querySelector('input[name="lastName"]');
-            const email = document.querySelector('input[name="email"]');
-            const phone = document.querySelector('input[name="phoneNumber"]');
-            const pass1 = document.querySelector('input[name="password"]');
-            const pass2 = document.querySelector('input[name="confirmPassword"]');
+    function autoRegister() {
+        const nameField = document.querySelector('input[name="full_name"]');
+        const emailField = document.querySelector('input[name="email"]');
+        const passwordField = document.querySelector('input[name="password"]');
+        const confirmField = document.querySelector('input[name="confirm_password"]');
+        const submitBtn = document.querySelector('button[type="submit"]');
 
-            if (first && last && email && phone && pass1 && pass2) {
-                const ho = "Nguyen";
-                const ten = "Minh" + rand(3);
-                const mail = (ho + ten).toLowerCase() + "@yopmail.com";
-                const sdt = getPhone();
-                const pw = getPassword();
+        if (nameField && emailField && passwordField && confirmField) {
+            const randomEmail = generateRandomEmail();
+            const fullName = "Minhconbo™ " + Math.floor(Math.random() * 10000);
+            const password = "12345678";
 
-                first.value = ten;
-                last.value = ho;
-                email.value = mail;
-                phone.value = sdt;
-                pass1.value = pw;
-                pass2.value = pw;
+            simulateInput(nameField, fullName);
+            simulateInput(emailField, randomEmail);
+            simulateInput(passwordField, password);
+            simulateInput(confirmField, password);
 
-                [first, last, email, phone, pass1, pass2].forEach(i => {
-                    i.dispatchEvent(new Event("input", { bubbles: true }));
-                });
+            localStorage.setItem("permate_last_email", randomEmail);
 
-                clearInterval(timer);
-                alert(`✅ Đã điền!\n📩 ${mail}\n📞 ${sdt}\n🔒 ${pw}\n👉 Tick CAPTCHA rồi bấm Đăng ký`);
+            if (submitBtn) {
+                setTimeout(() => {
+                    submitBtn.click();
+                    // Mở tab maildim sau khi submit
+                    setTimeout(() => {
+                        window.open("https://maildim.com/", "_blank");
+                    }, 1000);
+                }, 800);
             }
+        } else {
+            alert("❌ Không tìm thấy trường nhập – Có thể DOM đã đổi.");
+        }
+    }
 
-            if (++count > 20) {
-                clearInterval(timer);
-                alert("❌ Không tìm thấy form. Có thể Permate đã đổi giao diện.");
-            }
-        }, 500);
-    };
+    function createGUI() {
+        const gui = document.createElement("div");
+        gui.innerHTML = `
+            <div id="autoRegGui" style="position: fixed; bottom: 20px; left: 20px; background: #222; color: white; padding: 10px 15px; border-radius: 12px; z-index: 9999; box-shadow: 0 0 8px rgba(0,0,0,0.4); font-size: 14px;">
+                ✅ Permate Auto Reg v1.8.3<br>
+                <button id="autoRegBtn" style="margin-top: 6px; padding: 5px 10px; background: #00c851; border: none; border-radius: 6px; color: white;">Auto Đăng Ký</button>
+            </div>
+        `;
+        document.body.appendChild(gui);
+        document.getElementById("autoRegBtn").onclick = autoRegister;
+    }
+
+    window.addEventListener("load", () => {
+        setTimeout(() => createGUI(), 1000);
+    });
 })();
