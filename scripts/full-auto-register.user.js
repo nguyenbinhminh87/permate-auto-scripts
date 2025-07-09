@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Permate Full Auto v1.9.1
+// @name         Permate Full Auto v2.0 (with Full GUI)
 // @namespace    https://permate.com/
-// @version      1.9.1
-// @description  Đăng ký + OTP + Đăng nhập tự động trên Permate.com (Fix GUI)
+// @version      2.0
+// @description  Tự động đăng ký, xác minh OTP, đăng nhập + GUI đầy đủ từ A-Z
 // @match        https://permate.com/auth/partner/sign-up
 // @match        https://permate.com/auth/verify-email*
 // @match        https://permate.com/auth/login
@@ -10,121 +10,145 @@
 // ==/UserScript==
 
 (function () {
-  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-  const randomEmail = () => 'minhconbo' + Math.floor(Math.random() * 1000000) + '@gmailos.com';
+  const delay = ms => new Promise(res => setTimeout(res, ms));
   const password = 'Minhconbo123';
 
-  async function autoRegister() {
-    if (!location.href.includes('/sign-up')) return;
+  function createMainGUI(email, phone) {
+    const box = document.createElement('div');
+    box.id = 'permate-gui';
+    box.style = `
+      position:fixed;top:20px;left:20px;z-index:9999;
+      background:#111;color:#fff;padding:12px;
+      border-radius:10px;font-size:14px;line-height:1.6;
+      box-shadow:0 0 10px #000;width:260px;
+    `;
+    box.innerHTML = `
+      <b>👤 Permate Auto GUI</b><br>
+      <div>Email: <code>${email}</code></div>
+      <div>Pass: <code>${password}</code></div>
+      <div>SĐT: <code>${phone}</code></div>
+      <button id="startRegister" style="margin-top:8px;padding:6px;width:100%;">🚀 Auto Đăng Ký</button>
+    `;
+    document.body.appendChild(box);
+  }
 
-    const email = randomEmail();
+  async function autoRegisterFlow() {
+    const email = 'minhconbo' + Math.floor(Math.random() * 999999) + '@gmailos.com';
+    const phone = '09' + Math.floor(Math.random() * 100000000);
+
     localStorage.setItem('perm_email', email);
     localStorage.setItem('perm_pass', password);
+    localStorage.setItem('perm_phone', phone);
 
-    function simulateInput(selector, value) {
+    const input = (selector, value) => {
       const el = document.querySelector(selector);
       if (el) {
         el.focus();
         el.value = value;
         el.dispatchEvent(new Event('input', { bubbles: true }));
       }
-    }
+    };
 
     await delay(1000);
-    simulateInput('input[name="name"]', 'Minh Con Bò');
-    simulateInput('input[name="phone"]', '09' + Math.floor(Math.random() * 100000000));
-    simulateInput('input[name="email"]', email);
-    simulateInput('input[name="password"]', password);
-    await delay(800);
-
+    input('input[name="name"]', 'Minh Con Bò');
+    input('input[name="phone"]', phone);
+    input('input[name="email"]', email);
+    input('input[name="password"]', password);
+    await delay(500);
     document.querySelector('button[type="submit"]')?.click();
   }
 
-  async function autoOTP() {
-    if (!location.href.includes('/verify-email')) return;
-
-    const email = localStorage.getItem('perm_email');
+  async function createOTPGUI(email) {
     const username = email.split('@')[0];
-    const otpInput = document.querySelector('input[name="code"]');
-    const submitBtn = document.querySelector('button[type="submit"]');
-
-    const GUI = document.createElement('div');
-    GUI.style = `
+    const otpBox = document.createElement('div');
+    otpBox.id = 'otp-gui';
+    otpBox.style = `
       position:fixed;top:20px;right:20px;z-index:9999;
       background:#111;color:#fff;padding:10px;border-radius:10px;
-      font-size:14px;width:auto;max-width:90%;
+      font-size:14px;width:250px;
     `;
-    GUI.innerHTML = `
-      <div><b>Email:</b> <code>${email}</code></div>
-      <button id="pasteOtpBtn" style="margin-top:5px;padding:5px;">Dán mã OTP</button>
-      <div id="otpCode" style="margin-top:6px;color:#0f0;"></div>
+    otpBox.innerHTML = `
+      <b>🔐 OTP cho:</b><br><code>${email}</code><br>
+      <button id="fetchOtp" style="margin-top:6px;padding:5px;width:100%;">📥 Dán mã OTP</button>
+      <div id="otpResult" style="color:#0f0;margin-top:6px;"></div>
     `;
-    document.body.appendChild(GUI);
+    document.body.appendChild(otpBox);
 
-    async function fetchOtpCode() {
-      try {
-        const res = await fetch(`https://gmailos.com/api/emails/${username}`);
-        const data = await res.json();
-        const body = data?.[0]?.body || '';
-        const otp = body.match(/\d{6}/)?.[0];
-        if (otp) {
-          document.getElementById('otpCode').innerText = 'Mã OTP: ' + otp;
-          return otp;
-        }
-      } catch (e) {
-        console.warn('OTP fetch error:', e);
-      }
-      return null;
-    }
-
-    document.getElementById('pasteOtpBtn').onclick = async () => {
-      const otp = await fetchOtpCode();
-      if (otp && otpInput) {
-        otpInput.value = otp;
+    document.getElementById('fetchOtp').onclick = async () => {
+      const code = await getOTP(username);
+      if (code) {
+        const otpInput = document.querySelector('input[name="code"]');
+        const submitBtn = document.querySelector('button[type="submit"]');
+        otpInput.value = code;
         otpInput.dispatchEvent(new Event('input', { bubbles: true }));
+        document.getElementById('otpResult').innerText = '✅ OTP: ' + code;
         await delay(300);
         submitBtn?.click();
+      } else {
+        document.getElementById('otpResult').innerText = '❌ Không tìm thấy OTP';
       }
     };
 
-    // Auto try trong 60 giây
+    // Auto paste OTP
     for (let i = 0; i < 20; i++) {
-      const otp = await fetchOtpCode();
-      if (otp) {
-        otpInput.value = otp;
-        otpInput.dispatchEvent(new Event('input', { bubbles: true }));
-        await delay(300);
-        submitBtn?.click();
+      const code = await getOTP(username);
+      if (code) {
+        document.querySelector('input[name="code"]').value = code;
+        document.querySelector('input[name="code"]').dispatchEvent(new Event('input', { bubbles: true }));
+        document.querySelector('button[type="submit"]')?.click();
+        document.getElementById('otpResult').innerText = '✅ OTP: ' + code;
         break;
       }
       await delay(3000);
     }
   }
 
-  async function autoLogin() {
-    if (!location.href.includes('/login')) return;
+  async function getOTP(username) {
+    try {
+      const res = await fetch(`https://gmailos.com/api/emails/${username}`);
+      const data = await res.json();
+      return data?.[0]?.body?.match(/\d{6}/)?.[0] || null;
+    } catch {
+      return null;
+    }
+  }
 
+  async function autoLogin() {
     const email = localStorage.getItem('perm_email');
     const pass = localStorage.getItem('perm_pass');
-    if (!email || !pass) return;
 
-    function simulateInput(selector, value) {
+    const input = (selector, value) => {
       const el = document.querySelector(selector);
       if (el) {
         el.focus();
         el.value = value;
         el.dispatchEvent(new Event('input', { bubbles: true }));
       }
-    }
+    };
 
     await delay(800);
-    simulateInput('input[name="email"]', email);
-    simulateInput('input[name="password"]', pass);
-    await delay(600);
+    input('input[name="email"]', email);
+    input('input[name="password"]', pass);
+    await delay(400);
     document.querySelector('button[type="submit"]')?.click();
   }
 
-  autoRegister();
-  autoOTP();
-  autoLogin();
+  // Run GUI per page
+  if (location.href.includes('/sign-up')) {
+    const email = 'minhconbo' + Math.floor(Math.random() * 999999) + '@gmailos.com';
+    const phone = '09' + Math.floor(Math.random() * 100000000);
+    createMainGUI(email, phone);
+    document.addEventListener('click', e => {
+      if (e.target.id === 'startRegister') autoRegisterFlow();
+    });
+  }
+
+  if (location.href.includes('/verify-email')) {
+    const email = localStorage.getItem('perm_email') || 'N/A';
+    createOTPGUI(email);
+  }
+
+  if (location.href.includes('/login')) {
+    autoLogin();
+  }
 })();
