@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Permate Full Auto v2.2 (Maildim + OTP Status)
+// @name         Permate Full Auto v2.2.2 (Fix mobile form load)
 // @namespace    https://permate.com/
-// @version      2.2
-// @description  Tự động đăng ký, nhận OTP từ maildim, dán và login, kèm GUI + trạng thái
+// @version      2.2.2
+// @description  Fix không điền form khi bấm "Auto Đăng Ký" trên mobile (Kiwi, Yandex), auto OTP + login
 // @match        https://permate.com/auth/partner/sign-up
 // @match        https://permate.com/auth/verify-email*
 // @match        https://permate.com/auth/login
@@ -38,6 +38,23 @@
       <button id="startRegister" style="margin-top:8px;padding:6px;width:100%;">🚀 Auto Đăng Ký</button>
     `;
     document.body.appendChild(box);
+
+    const btn = document.getElementById('startRegister');
+    if (btn) {
+      btn.onclick = async () => {
+        console.log('🚀 Bắt đầu auto đăng ký...');
+        await startRegister(email, phone);
+      };
+    }
+  }
+
+  async function waitForInput(selector, maxTries = 10) {
+    for (let i = 0; i < maxTries; i++) {
+      const el = document.querySelector(selector);
+      if (el) return el;
+      await delay(500);
+    }
+    return null;
   }
 
   async function startRegister(email, phone) {
@@ -45,22 +62,27 @@
     localStorage.setItem('perm_pass', password);
     localStorage.setItem('perm_phone', phone);
 
-    const input = (selector, value) => {
-      const el = document.querySelector(selector);
+    const setInput = async (selector, value) => {
+      const el = await waitForInput(selector);
       if (el) {
         el.focus();
         el.value = value;
         el.dispatchEvent(new Event('input', { bubbles: true }));
+        console.log(`✏️ Điền: ${selector} = ${value}`);
+      } else {
+        console.warn(`❌ Không tìm thấy input: ${selector}`);
       }
     };
 
+    await setInput('input[name="name"]', 'Minh Con Bò');
+    await setInput('input[name="phone"]', phone);
+    await setInput('input[name="email"]', email);
+    await setInput('input[name="password"]', password);
+    await setInput('input[name="confirmPassword"]', password);
     await delay(500);
-    input('input[name="name"]', 'Minh Con Bò');
-    input('input[name="phone"]', phone);
-    input('input[name="email"]', email);
-    input('input[name="password"]', password);
-    await delay(400);
-    document.querySelector('button[type="submit"]')?.click();
+    const btn = await waitForInput('button[type="submit"]');
+    btn?.click();
+    console.log('📨 Đã gửi form đăng ký!');
   }
 
   async function createOTPGUI(email, username) {
@@ -79,24 +101,20 @@
     `;
     document.body.appendChild(otpBox);
 
-    const fetchAndPaste = async () => {
+    document.getElementById('fetchOtp').onclick = async () => {
       const code = await getOTPFromMaildim(username);
       if (code) {
         const otpInput = document.querySelector('input[name="code"]');
-        const submitBtn = document.querySelector('button[type="submit"]');
         otpInput.value = code;
         otpInput.dispatchEvent(new Event('input', { bubbles: true }));
         document.getElementById('otpStatus').innerText = '✅ OTP: ' + code;
         await delay(300);
-        submitBtn?.click();
+        document.querySelector('button[type="submit"]')?.click();
       } else {
         document.getElementById('otpStatus').innerText = '❌ Không tìm thấy OTP';
       }
     };
 
-    document.getElementById('fetchOtp').onclick = fetchAndPaste;
-
-    // Auto fetch OTP mỗi 3s (30 lần = 90s)
     for (let i = 0; i < 30; i++) {
       const code = await getOTPFromMaildim(username);
       if (code) {
@@ -126,8 +144,8 @@
     const email = localStorage.getItem('perm_email');
     const pass = localStorage.getItem('perm_pass');
 
-    const input = (selector, value) => {
-      const el = document.querySelector(selector);
+    const input = async (selector, value) => {
+      const el = await waitForInput(selector);
       if (el) {
         el.focus();
         el.value = value;
@@ -135,9 +153,8 @@
       }
     };
 
-    await delay(800);
-    input('input[name="email"]', email);
-    input('input[name="password"]', pass);
+    await input('input[name="email"]', email);
+    await input('input[name="password"]', pass);
     await delay(400);
     document.querySelector('button[type="submit"]')?.click();
   }
@@ -149,12 +166,6 @@
     const username = emailData.name;
     const phone = '09' + Math.floor(Math.random() * 100000000);
     createMainGUI(email, phone);
-
-    setTimeout(() => {
-      document.getElementById('startRegister')?.addEventListener('click', () => {
-        startRegister(email, phone);
-      });
-    }, 500);
   }
 
   if (location.href.includes('/verify-email')) {
