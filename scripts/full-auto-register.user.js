@@ -1,83 +1,41 @@
 // ==UserScript==
-// @name         Permate Auto Register v1.8.5
-// @namespace    https://permate.com/
-// @version      1.8.5
-// @description  Auto đăng ký Permate dùng @maildim.com ✔️ Mở tab maildim ✔️ Chống lỗi không load form ✔️ GUI luôn hoạt động ✔️ Full hỗ trợ mobile/permate chậm DOM load ✔️ Không kèm OTP dán tự động (riêng v2.3 sau nhé)
-// @author       Minhconbo
+// @name         Permate Reg Info Display v1.0
+// @version      1.0
+// @description  Hiển thị thông tin đăng ký đã tạo sẵn ✔️ Sao chép Gmail + mật khẩu ✔️ Link mở maildim ✔️ Hỗ trợ mobile Quetta/Kiwi ✔️ Dành cho anh Minhconbo 😎
 // @match        https://permate.com/auth/partner/sign-up
 // @grant        none
 // ==/UserScript==
 
 (function () {
-    'use strict';
+    const email = Math.random().toString(36).substring(2, 10) + "@maildim.com";
+    const password = "12345678";
+    localStorage.setItem("permate_last_email", email);
 
-    function generateRandomEmail() {
-        const prefix = Math.random().toString(36).substring(2, 10);
-        return prefix + "@maildim.com";
-    }
-
-    function simulateInput(el, value) {
-        el.value = value;
-        el.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-
-    function waitForFormReady(callback, timeout = 15000) {
-        const start = Date.now();
-        const check = setInterval(() => {
-            const name = document.querySelector('input[name="full_name"]');
-            const email = document.querySelector('input[name="email"]');
-            const pass = document.querySelector('input[name="password"]');
-            const confirm = document.querySelector('input[name="confirm_password"]');
-            const submit = document.querySelector('button[type="submit"]');
-
-            if (name && email && pass && confirm && submit) {
-                clearInterval(check);
-                callback({ name, email, pass, confirm, submit });
-            }
-
-            if (Date.now() - start > timeout) {
-                clearInterval(check);
-                alert("❌ Form không load kịp! Có thể do mạng hoặc web delay.");
-            }
-        }, 500);
-    }
-
-    function autoRegister() {
-        waitForFormReady(({ name, email, pass, confirm, submit }) => {
-            const randEmail = generateRandomEmail();
-            const fullName = "Minhconbo™ " + Math.floor(Math.random() * 9999);
-            const password = "12345678";
-
-            simulateInput(name, fullName);
-            simulateInput(email, randEmail);
-            simulateInput(pass, password);
-            simulateInput(confirm, password);
-
-            localStorage.setItem("permate_last_email", randEmail);
-
-            setTimeout(() => {
-                submit.click();
-                setTimeout(() => {
-                    window.open("https://maildim.com/", "_blank");
-                }, 1000);
-            }, 800);
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert("📋 Đã sao chép: " + text);
         });
     }
 
-    function createGUI() {
-        const gui = document.createElement("div");
-        gui.innerHTML = `
-            <div id="autoRegGui" style="position: fixed; bottom: 20px; left: 20px; background: #1d1d1d; color: white; padding: 12px 16px; border-radius: 12px; z-index: 9999; box-shadow: 0 0 10px rgba(0,0,0,0.5); font-size: 14px;">
-                🔄 <b>Permate Auto Reg v1.8.5</b><br>
-                <button id="autoRegBtn" style="margin-top: 8px; padding: 6px 12px; background: #00c851; border: none; border-radius: 6px; color: white;">Auto Đăng Ký</button>
-            </div>
-        `;
-        document.body.appendChild(gui);
-        document.getElementById("autoRegBtn").onclick = autoRegister;
+    function createPanel() {
+        const box = document.createElement("div");
+        box.innerHTML = `
+        <div style="position: fixed; bottom: 20px; right: 20px; background: #111; color: white; padding: 14px 16px; border-radius: 12px; z-index: 9999; box-shadow: 0 0 8px black; font-size: 14px; max-width: 250px;">
+            <b>📩 Thông tin đăng ký</b><br><br>
+            <b>📧 Gmail:</b><br>
+            <span id="regEmail">${email}</span><br>
+            <button onclick="navigator.clipboard.writeText('${email}').then(()=>alert('📋 Đã sao chép Gmail'))" style="margin-top:4px; background:#444;color:white;border:none;padding:4px 8px;border-radius:6px;">📋 Sao chép Gmail</button><br><br>
+
+            <b>🔐 Mật khẩu:</b><br>
+            <span>${password}</span><br>
+            <button onclick="navigator.clipboard.writeText('${password}').then(()=>alert('📋 Đã sao chép mật khẩu'))" style="margin-top:4px; background:#444;color:white;border:none;padding:4px 8px;border-radius:6px;">📋 Sao chép mật khẩu</button><br><br>
+
+            <a href="https://maildim.com/" target="_blank" style="color:#00c851;">📬 Mở maildim.com</a>
+        </div>`;
+        document.body.appendChild(box);
     }
 
-    // Đợi toàn bộ load xong (SPA delay + DOM ổn định)
     window.addEventListener("load", () => {
-        setTimeout(() => createGUI(), 1500);
+        setTimeout(() => createPanel(), 1000);
     });
 })();
