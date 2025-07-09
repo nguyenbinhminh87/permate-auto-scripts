@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Auto Đăng Ký Permate v1.6.6 (No Auto Submit)
+// @name         Auto Đăng Ký Permate v1.6.7 (Fix Every Where)
 // @namespace    https://permate.com/
-// @version      1.6.6
-// @description  Auto điền form đăng ký Permate, không tự submit để tránh CAPTCHA lỗi
+// @version      1.6.7
+// @description  Auto điền form Permate ổn định, chống lỗi form, không auto submit
 // @match        https://permate.com/auth/partner/sign-up*
 // @grant        none
 // ==/UserScript==
@@ -21,16 +21,16 @@
     const getPhone = () => "09" + Math.floor(10000000 + Math.random() * 89999999);
     const getPassword = () => "Minh" + Math.floor(1000 + Math.random() * 8999) + "!";
 
-    // Khi bấm nút
+    // Bấm nút
     document.getElementById("autoPermate").onclick = () => {
         let count = 0;
         const timer = setInterval(() => {
-            const first = document.querySelector('input[placeholder="Nhập tên"]');
-            const last = document.querySelector('input[placeholder="Nhập họ"]');
-            const email = document.querySelector('input[placeholder="Nhập email"]');
-            const phone = document.querySelector('input[placeholder="Nhập số điện thoại"]');
-            const pass1 = document.querySelectorAll('input[placeholder="Nhập mật khẩu"]')[0];
-            const pass2 = document.querySelectorAll('input[placeholder="Nhập mật khẩu"]')[1];
+            const first = document.querySelector('input[name="firstName"]');
+            const last = document.querySelector('input[name="lastName"]');
+            const email = document.querySelector('input[name="email"]');
+            const phone = document.querySelector('input[name="phoneNumber"]');
+            const pass1 = document.querySelector('input[name="password"]');
+            const pass2 = document.querySelector('input[name="confirmPassword"]');
 
             if (first && last && email && phone && pass1 && pass2) {
                 const ho = "Nguyen";
@@ -39,7 +39,6 @@
                 const sdt = getPhone();
                 const pw = getPassword();
 
-                // Điền dữ liệu
                 first.value = ten;
                 last.value = ho;
                 email.value = mail;
@@ -47,19 +46,17 @@
                 pass1.value = pw;
                 pass2.value = pw;
 
-                // Gửi event input (tránh lỗi bắt buộc)
                 [first, last, email, phone, pass1, pass2].forEach(i => {
-                    i.dispatchEvent(new Event('input', { bubbles: true }));
+                    i.dispatchEvent(new Event("input", { bubbles: true }));
                 });
 
                 clearInterval(timer);
-
-                alert(`✅ Đã điền form!\n📩 Email: ${mail}\n📞 SĐT: ${sdt}\n🔒 Pass: ${pw}\n👉 Tick CAPTCHA rồi tự bấm Đăng ký nha!`);
+                alert(`✅ Đã điền!\n📩 ${mail}\n📞 ${sdt}\n🔒 ${pw}\n👉 Tick CAPTCHA rồi bấm Đăng ký`);
             }
 
             if (++count > 20) {
                 clearInterval(timer);
-                alert("❌ Không tìm thấy form sau 10 giây.");
+                alert("❌ Không tìm thấy form. Có thể Permate đã đổi giao diện.");
             }
         }, 500);
     };
